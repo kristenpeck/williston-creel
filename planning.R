@@ -8,13 +8,17 @@ library(tidyhydat)
 library(lubridate)
 library(ggplot2)
 library(AnglerCreelSurveySimulation)
+library(calendar)
 
 launches<- c("Dunlevy", "ElizabethCreek")
 
+# Not all launches are available in the spring on Williston, so nee to figure out when they are generally 
+# available.
+
 launch.elev <- data.frame(launches, elev = c(660.5, 655))
 
-yday(ymd("2010-05-01")) # 121
-yday(ymd("2010-10-31")) # 304
+yday(ymd("2010-05-01")) 
+yday(ymd("2010-10-31")) 
 
 
 #length of the creel season:
@@ -25,7 +29,7 @@ season <- data.frame(startend = c("start","end"), Date = c(yday(ymd("2010-05-01"
 # this function will download a copy of HYDAT, but i will take some time, 
   # and once done it doesn't need updating all the time 
 
-# download_hydat()
+#download_hydat()
 
 # Williston at Lost Cabin station number: 07EF002
 
@@ -165,4 +169,38 @@ shifts <- data.frame(month = c(5:11),
 shifts$shifts = 30*shifts$prop
 
 shifts
+
+
+
+# read in Williston calendar and check if things well distributed
+
+ics_df <- ic_read("Willy Creel Techs Calendar.ics")
+
+#check number of weekends, weekdays per month:
+calendar <- ics_df %>% 
+    mutate(Date=`DTSTART;VALUE=DATE`,activity=`SUMMARY;LANGUAGE=en-ca`,
+       
+               dayofweek = wday(Date,label=T,abbr=T), 
+           weekend = ifelse(dayofweek %in% c("Sat","Sun"),T,F),
+           month=month(Date),year=year(Date)) %>% 
+  arrange(Date)
+
+
+str(calendar)
+unique(calendar$activity)
+
+
+calendar %>% 
+filter(activity %in% c("Brian","Brian ")) %>% 
+dplyr::group_by(month) %>% 
+  summarize(num.days = length(weekend == T))
+
+calendar %>% 
+  filter(activity %in% c("Guy")) %>% 
+  dplyr::group_by(dayofweek, weekend) %>% 
+  summarize(num.days = length(weekend == T))
+
+noquote(paste0(stamp("March 1")(unique(calendar$Date)), sep=","))
+
+
 
